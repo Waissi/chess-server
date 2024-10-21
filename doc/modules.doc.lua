@@ -1,0 +1,10 @@
+---@class Modules
+---@field game GameModule
+---@field players PlayerModule
+---@field movement MovementModule
+---@field board BoardModule
+---@field square SquareModule
+---@field interface PieceModule
+---@field position PositionModule
+---@field piece PieceModule
+---@field connection ConnectionModule

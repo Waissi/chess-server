@@ -1,0 +1,2 @@
+---@class MovementModule
+---@field get_possible_squares fun(pieceType: string, piece: Piece, board: Square[][]): Square[]
