@@ -1,5 +1,3 @@
-local gamePositions
-
 local startPos = {
     [1] = {
         ["A"] = { type = "rook", color = "black" },
@@ -64,9 +62,10 @@ local are_positions_similar = function(newPos, existingPos)
     return true
 end
 
+---@param existingPositions table
 ---@param newPosition table
-local get_existing_position = function(newPosition)
-    for _, gamePosition in ipairs(gamePositions) do
+local get_existing_position = function(newPosition, existingPositions)
+    for _, gamePosition in ipairs(existingPositions) do
         local position = gamePosition.position
         local similarPieceNumber = true
         for pieceType, piecePositions in pairs(newPosition) do
@@ -82,24 +81,23 @@ local get_existing_position = function(newPosition)
 end
 
 return {
-    init_start_positions = function()
-        gamePositions = {}
+    get_start_positions = function()
         return startPos
     end,
 
-    ---@param gamePieces table<string, Piece[]>
-    get_repetition = function(gamePieces)
+    ---@param game Game
+    get_repetition = function(game)
         local newPos = {}
-        for color, pieces in pairs(gamePieces) do
+        for color, pieces in pairs(game.pieces) do
             newPos[color] = {}
             for _, piece in ipairs(pieces) do
                 if not newPos[color][piece.type] then newPos[color][piece.type] = {} end
                 table.insert(newPos[color][piece.type], { x = piece.x, y = piece.y })
             end
         end
-        local repetition = get_existing_position(newPos)
+        local repetition = get_existing_position(newPos, game.positions)
         if not repetition then
-            gamePositions[#gamePositions + 1] = { occurence = 1, position = newPos }
+            game.positions[#game.positions + 1] = { occurence = 1, position = newPos }
             return 1
         end
         repetition.occurence = repetition.occurence + 1

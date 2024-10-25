@@ -11,3 +11,4 @@
 ---@class Game
 ---@field board Square[][]
 ---@field pieces table<string, Piece[]>
+---@field positions table

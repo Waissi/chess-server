@@ -56,7 +56,7 @@ end
 ---@param promotion string?
 local next_turn = function(connection, game, color, currentPiece, previousPos, deadPawn, promotion)
     currentPlayer = M.players.next(currentPlayer)
-    local repetition = M.position.get_repetition(game.pieces)
+    local repetition = M.position.get_repetition(game)
     local menu
     if repetition == 3 then
         menu = "threefold"
@@ -90,9 +90,10 @@ return {
             pieces = {
                 white = {},
                 black = {}
-            }
+            },
+            positions = {}
         }
-        local startPos = M.position.init_start_positions()
+        local startPos = M.position.get_start_positions()
         for number, list in pairs(startPos) do
             for letter, piece in pairs(list) do
                 local x = tonumber(string.sub(letter, 1), 24) - 9
@@ -107,7 +108,7 @@ return {
                 M.square.occupy(square, piece)
             end
         end
-        M.position.get_repetition(game.pieces)
+        M.position.get_repetition(game)
         return game
     end,
 

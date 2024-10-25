@@ -66,11 +66,6 @@ local validate_squares = function(squares, color)
 end
 
 return {
-    ---@param color string
-    init = function(color)
-        hostColor = color
-    end,
-
     get_possible_squares = switch {
         ---@param piece Piece
         ---@param board Square[][]
