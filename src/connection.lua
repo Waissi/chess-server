@@ -5,7 +5,7 @@ local Game = import "game"
 local enet = require "enet"
 local json = import "json"
 local rng = love.math.newRandomGenerator(os.time())
-local host = enet.host_create("localhost:6789")
+local host = enet.host_create("0.0.0.0:6789")
 local pendingPlayers = {}
 
 ---@type Connection[]
@@ -88,15 +88,6 @@ local handle_event = switch {
 
 
 return {
-    disconnect = function()
-        for _, connection in ipairs(connections) do
-            local data = json.encode({ message = "release" })
-            for _, player in pairs(connection.players) do
-                player:send(data)
-            end
-        end
-        host:service()
-    end,
 
     ---@param connection Connection
     ---@param gameData table
