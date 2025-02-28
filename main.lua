@@ -8,5 +8,7 @@ function love.update()
 end
 
 function love.quit()
-    connection.disconnect()
+    print "===== Stoping Chess Server ====="
 end
+
+print "===== Starting Chess Server ====="
