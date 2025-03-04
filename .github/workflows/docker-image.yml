@@ -4,30 +4,39 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-      # Inputs the workflow accepts.
-      inputs:
-        name:
-          # Friendly description to be shown in the UI instead of 'name'
-          description: 'Manual trigger'
-          # Default value if no value is explicitly provided
-          default: ''
-          # Input has to be provided for the workflow to run
-          required: false
-          # The data type of the input
-          type: string
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04-arm
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Compile Luajit
+        run: |
+          git clone https://luajit.org/git/luajit.git
+          cd luajit
+          make && sudo make install
+          cd ..
+
+      - name: Compile lua-https
+        run: |
+          git clone https://github.com/love2d/lua-https.git
+          cd lua-https
+          cmake -Bbuild -S. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=install
+          cmake --build build --target install
+          cd ..
+
+      - name: Upload https lib
+      - uses: actions/upload-artifact@master
+        with:
+          name: httpslib
+          path: lua-https/install/https.so
+        
       - name: Build löve file
         run : |
-          zip -r server.love src main.lua conf.lua
+          zip -r server.love src main.lua conf.lua lua-https/install/https.so
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
