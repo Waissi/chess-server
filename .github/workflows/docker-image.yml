@@ -22,6 +22,8 @@ jobs:
 
       - name: Compile lua-https
         run: |
+          sudo apt update
+          sudo apt install curl libcurl4
           git clone https://github.com/love2d/lua-https.git
           cd lua-https
           cmake -Bbuild -S. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=install
