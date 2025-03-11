@@ -33,7 +33,10 @@ local peers = {}
 local send_request_to_game_db = function(requestData)
     local thread = love.thread.newThread([[
         local https = require "https"
-        https.request(...)
+        local status, error = https.request(...)
+        if status ~= 200 then
+            print(status, error)
+        end
     ]])
     thread:start(gameDbUrl, requestData)
 end
@@ -47,6 +50,7 @@ local get_game = function(playerId)
         local game = json.decode(gameData)
         return game
     end
+    print "Could not find game"
 end
 
 ---@param game Game
