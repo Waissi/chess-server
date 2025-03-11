@@ -6,5 +6,4 @@ ENV XDG_RUNTIME_DIR=/run/user/
 COPY server.love .
 COPY https.so /usr/local/lib/lua/5.1/
 EXPOSE 6789
-EXPOSE 6790
 CMD ["love", "server.love"]
