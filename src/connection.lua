@@ -3,8 +3,7 @@
 local Game = import "game"
 local enet = require "enet"
 local json = import "json"
-local host = enet.host_create("0.0.0.0:6789", 64, 5)
-local allocator = enet.host_create()
+local host, allocator
 local allocatorPeer
 local allocatorChannels = {
     ["new_player"] = 1,
@@ -97,12 +96,11 @@ local handle_client_event = {
 ---channel 2 => creates new game
 ---channel 3 => send update to player
 ---@type fun(channel: number, data: string)
-local handle_dispatcher_event = {
+local handle_allocator_event = {
 
     ---init new game
     ---@param playerId string
     function(playerId)
-        print "Sending game init"
         local color = playerId:sub(1, 1) == "w" and "white" or "black"
         local id = playerId:sub(2, #playerId)
         peers[id]:send(color, allocatorChannels["new_player"])
@@ -119,7 +117,6 @@ local handle_dispatcher_event = {
             print(status, error)
             return
         end
-        print "New game created"
         local registeredPlayer = peers[whitePlayerId] and whitePlayerId or blackPlayerId
         games[registeredPlayer] = newGame
         local gamePieces = json.encode(newGame.pieces)
@@ -148,14 +145,17 @@ local handle_dispatcher_event = {
 return {
 
     init = function()
+        allocator = enet.host_create()
         if os.getenv("env") == "dev" then
             allocatorPeer = allocator:connect("172.17.0.2:6790", 5)
+            host = enet.host_create("0.0.0.0:6789", 64, 5)
             print("Connecting with local allocator:", allocatorPeer)
             return true
         end
         local status, address = https.request(allocatorUrl)
         if status == 200 then
             allocatorPeer = host:connect(address .. ":6790", 5)
+            host = enet.host_create("0.0.0.0:6789", 64, 5)
             print("Connecting with remote allocator:", allocatorPeer)
             return true
         end
@@ -184,6 +184,13 @@ return {
 
     update = function()
         if not (host and allocatorPeer) then return end
+        local allocatorEvent = allocator:service()
+        while allocatorEvent do
+            if allocatorEvent.type == "receive" then
+                handle_allocator_event[allocatorEvent.channel](allocatorEvent.data)
+            end
+            allocatorEvent = allocator:service()
+        end
         local event = host:service()
         while event do
             if event.type == "receive" then
@@ -206,13 +213,6 @@ return {
                 delete_player(game, playerId, event.peer)
             end
             event = host:service()
-        end
-        local allocatorEvent = allocator:service()
-        while allocatorEvent do
-            if allocatorEvent.type == "receive" then
-                handle_dispatcher_event[allocatorEvent.channel](allocatorEvent.data)
-            end
-            allocatorEvent = allocator:service()
         end
     end
 }
