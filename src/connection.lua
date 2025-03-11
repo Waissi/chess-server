@@ -4,9 +4,9 @@ local Game = import "game"
 local enet = require "enet"
 local json = import "json"
 local host = enet.host_create("0.0.0.0:6789", 64, 5)
-local dispatcher = enet.host_create()
-local dispatcherPeer
-local dispatcherChannels = {
+local allocator = enet.host_create()
+local allocatorPeer
+local allocatorChannels = {
     ["new_player"] = 1,
     ["new_game"] = 2,
     ["game_update"] = 3,
@@ -23,7 +23,7 @@ local clientChannels = {
 local games = {}
 
 local https = require "https"
-local dispatcherUrl = "https://f2lffxojl5rdat4pzwlh2hzqzq0vkdxw.lambda-url.eu-central-1.on.aws/"
+local allocatorUrl = "https://75eezuqgqp5shmcvrj6msaqo3a0lvrhx.lambda-url.eu-central-1.on.aws/"
 local gameDbUrl = "https://ueihnzss5q6k4j6piwwwc766eq0uarxk.lambda-url.eu-central-1.on.aws/"
 
 local ids = {}
@@ -61,11 +61,11 @@ local delete_player = function(game, playerId, peer)
         local remainingPeer = peers[remainingPlayer]
         if remainingPeer then
             remainingPeer:send("", 4)
-            dispatcherPeer:send(remainingPlayer, dispatcherChannels["new_player"])
+            allocatorPeer:send(remainingPlayer, allocatorChannels["new_player"])
         end
         games[playerId] = nil
     end
-    dispatcherPeer:send(playerId, dispatcherChannels["delete_player"])
+    allocatorPeer:send(playerId, allocatorChannels["delete_player"])
     peers[playerId] = nil
     ids[peer] = nil
 end
@@ -85,7 +85,7 @@ local handle_client_event = {
     ---@param game Game
     function(game)
         send_request_to_game_db({ method = "delete", data = game.id })
-        dispatcherPeer:send(game.id, dispatcherChannels["new_game"])
+        allocatorPeer:send(game.id, allocatorChannels["new_game"])
     end,
 }
 
@@ -100,7 +100,7 @@ local handle_dispatcher_event = {
     function(playerId)
         local color = playerId:sub(1, 1) == "w" and "white" or "black"
         local id = playerId:sub(2, #playerId)
-        peers[id]:send(color, dispatcherChannels["new_player"])
+        peers[id]:send(color, allocatorChannels["new_player"])
     end,
 
     ---creates new game
@@ -124,7 +124,7 @@ local handle_dispatcher_event = {
             peers[unregisteredPlayer]:send(gamePieces, clientChannels["start"])
             return
         end
-        dispatcherPeer:send(unregisteredPlayer, dispatcherChannels["game_update"])
+        allocatorPeer:send(unregisteredPlayer, allocatorChannels["game_update"])
     end,
 
     ---send update to player
@@ -143,19 +143,19 @@ return {
 
     init = function()
         if os.getenv("env") == "dev" then
-            dispatcherPeer = dispatcher:connect("172.17.0.2:6790", 5)
+            allocatorPeer = allocator:connect("172.17.0.2:6790", 5)
             return true
         end
-        local status, address = https.request(dispatcherUrl)
+        local status, address = https.request(allocatorUrl)
         if status == 200 then
-            dispatcherPeer = host:connect(address .. ":6790", 5)
+            allocatorPeer = host:connect(address .. ":6790", 5)
             return true
         end
     end,
 
     quit = function()
-        if not dispatcherPeer then return end
-        dispatcherPeer:disconnect_now()
+        if not allocatorPeer then return end
+        allocatorPeer:disconnect_now()
     end,
 
     ---@param game Game
@@ -168,14 +168,14 @@ return {
             if peer then
                 peer:send(data, clientChannels["update"])
             else
-                dispatcherPeer:send(playerId, dispatcherChannels["game_update"])
-                dispatcher:service()
+                allocatorPeer:send(playerId, allocatorChannels["game_update"])
+                allocator:service()
             end
         end
     end,
 
     update = function()
-        if not (host and dispatcherPeer) then return end
+        if not (host and allocatorPeer) then return end
         local event = host:service()
         while event do
             if event.type == "receive" then
@@ -189,7 +189,7 @@ return {
                 local peer = event.peer
                 peers[id] = event.peer
                 ids[peer] = id
-                dispatcherPeer:send(id, dispatcherChannels["new_player"])
+                allocatorPeer:send(id, allocatorChannels["new_player"])
             elseif event.type == "disconnect" then
                 local playerId = ids[event.peer]
                 local game = games[playerId]
@@ -197,12 +197,12 @@ return {
             end
             event = host:service()
         end
-        local dispatcherEvent = dispatcher:service()
+        local dispatcherEvent = allocator:service()
         while dispatcherEvent do
             if dispatcherEvent.type == "receive" then
                 handle_dispatcher_event[dispatcherEvent.channel](dispatcherEvent.data)
             end
-            dispatcherEvent = dispatcher:service()
+            dispatcherEvent = allocator:service()
         end
     end
 }
