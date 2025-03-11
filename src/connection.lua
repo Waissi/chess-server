@@ -150,12 +150,13 @@ return {
     init = function()
         if os.getenv("env") == "dev" then
             allocatorPeer = allocator:connect("172.17.0.2:6790", 5)
+            print("Connecting with local allocator:", allocatorPeer)
             return true
         end
         local status, address = https.request(allocatorUrl)
         if status == 200 then
             allocatorPeer = host:connect(address .. ":6790", 5)
-            print("Connecting with allocator:", allocatorPeer)
+            print("Connecting with remote allocator:", allocatorPeer)
             return true
         end
     end,
@@ -206,12 +207,12 @@ return {
             end
             event = host:service()
         end
-        local dispatcherEvent = allocator:service()
-        while dispatcherEvent do
-            if dispatcherEvent.type == "receive" then
-                handle_dispatcher_event[dispatcherEvent.channel](dispatcherEvent.data)
+        local allocatorEvent = allocator:service()
+        while allocatorEvent do
+            if allocatorEvent.type == "receive" then
+                handle_dispatcher_event[allocatorEvent.channel](allocatorEvent.data)
             end
-            dispatcherEvent = allocator:service()
+            allocatorEvent = allocator:service()
         end
     end
 }
