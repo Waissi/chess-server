@@ -55,9 +55,9 @@ return {
         players[color].enPassantVulnerable = bool
     end,
 
-    ---@param currentPlayer Player
-    can_perform_en_passant = function(currentPlayer)
-        local color = currentPlayer.color == "white" and "black" or "white"
+    ---@param playerColor string
+    can_perform_en_passant = function(playerColor)
+        local color = playerColor == "white" and "black" or "white"
         return players[color].enPassantVulnerable
     end,
 

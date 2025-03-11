@@ -9,6 +9,10 @@ end
 
 function love.quit()
     print "===== Stoping Chess Server ====="
+    connection.quit()
 end
 
-print "===== Starting Chess Server ====="
+function love.load()
+    if not connection.init() then love.event.quit() end
+    print "===== Starting Chess Server ====="
+end

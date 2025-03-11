@@ -1,8 +1,6 @@
 ---@class ConnectionModule
+---@field init fun(): boolean
+---@field quit fun()
 ---@field update fun()
 ---@field disconnect fun()
----@field notify_players fun(connection: Connection, gameData: table)
-
----@class Connection
----@field game Game
----@field players table<string, userdata>
+---@field notify_players fun(game: Game)

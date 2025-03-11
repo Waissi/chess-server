@@ -3,9 +3,6 @@ local M = import "modules"
 import "switch"
 import "table"
 
----@type Player
-local currentPlayer
-
 ---@param game Game
 ---@param color string
 local is_valid_move = function(game, color)
@@ -47,15 +44,10 @@ local is_checkmate = function(game, king, color)
     return true
 end
 
----@param connection Connection
 ---@param game Game
----@param color string
----@param currentPiece Piece
----@param previousPos Position
----@param deadPawn Piece?
----@param promotion string?
-local next_turn = function(connection, game, color, currentPiece, previousPos, deadPawn, promotion)
-    currentPlayer = M.players.next(currentPlayer)
+---@param playerColor string
+local next_turn = function(game, playerColor)
+    game.currentPlayer = playerColor == "white" and "black" or "white"
     local repetition = M.position.get_repetition(game)
     local menu
     if repetition == 3 then
@@ -63,35 +55,30 @@ local next_turn = function(connection, game, color, currentPiece, previousPos, d
     elseif repetition == 5 then
         menu = "fivefold"
     else
-        local king = M.players.get_opponent_king(color, game.pieces)
+        local king = M.players.get_opponent_king(playerColor, game.pieces)
         if M.players.inspect_check(king, game.pieces, game.board) then
-            if is_checkmate(game, king, color) then
+            if is_checkmate(game, king, playerColor) then
                 menu = "checkmate"
             end
         end
     end
-    M.connection.notify_players(connection, {
-        movedPiece = {
-            newPos = { x = currentPiece.x, y = currentPiece.y },
-            previousPos = { x = previousPos.x, y = previousPos.y }
-        },
-        deadPawn = deadPawn and { x = deadPawn.x, y = deadPawn.y },
-        promotion = promotion,
-        menu = menu
-    })
+    game.menu = menu
+    M.connection.notify_players(game)
 end
 
 return {
-    init = function()
+    ---@param id string
+    init = function(id)
         M.players.init()
-        currentPlayer = M.players.get_player("white")
         local game = {
             board = M.board.new(),
             pieces = {
                 white = {},
                 black = {}
             },
-            positions = {}
+            currentPlayer = "white",
+            positions = {},
+            id = id
         }
         local startPos = M.position.get_start_positions()
         for number, list in pairs(startPos) do
@@ -112,10 +99,9 @@ return {
         return game
     end,
 
-    ---@param connection Connection
+    ---@param game Game
     ---@param data table
-    check_piece_movement = function(connection, data)
-        local game = connection.game
+    check_piece_movement = function(game, data)
         local color = data.color
         local currentSquare = game.board[data.pos.y][data.pos.x]
         local square = game.board[data.nextPos.y][data.nextPos.x]
@@ -137,9 +123,8 @@ return {
                     M.square.free(currentSquare)
                     M.square.occupy(square, newQueen)
                     if is_valid_move(game, color) then
-                        next_turn(connection, game, color, newQueen, { x = currentSquare.x, y = currentSquare.y }, nil,
-                            "queen")
-                        return true
+                        next_turn(game, color)
+                        return
                     end
                     M.square.occupy(currentSquare, selectedPiece)
                     M.square.free(square, newQueen)
@@ -151,7 +136,7 @@ return {
                     end
                     return
                 end
-                if M.players.can_perform_en_passant(currentPlayer) then
+                if M.players.can_perform_en_passant(game.currentPlayer) then
                     local deadPawn = M.players.get_dead_pawn_en_passant(selectedPiece, square, game.board)
                     if deadPawn then
                         local deadPawnSquare = game.board[deadPawn.y][deadPawn.x]
@@ -161,9 +146,8 @@ return {
                         M.square.occupy(square, selectedPiece)
                         M.piece.move(selectedPiece, square)
                         if is_valid_move(game, color) then
-                            next_turn(connection, game, color, selectedPiece,
-                                { x = currentSquare.x, y = currentSquare.y }, deadPawn)
-                            return true
+                            next_turn(game, color)
+                            return
                         end
                         M.piece.move(selectedPiece, currentSquare)
                         M.square.free(square)
@@ -196,8 +180,8 @@ return {
                 M.piece.move(selectedPiece, square)
                 M.piece.move(castlingMovement.tower, castlingMovement.newPos)
                 if is_valid_move(game, color) then
-                    next_turn(connection, game, color, selectedPiece, { x = currentSquare.x, y = currentSquare.y })
-                    return true
+                    next_turn(game, color)
+                    return
                 end
                 selectedPiece.hasMoved = false
                 M.piece.move(selectedPiece, currentSquare)
@@ -218,8 +202,8 @@ return {
                 M.square.occupy(square, selectedPiece)
                 M.piece.move(selectedPiece, square)
                 if is_valid_move(game, color) then
-                    next_turn(connection, game, color, selectedPiece, { x = currentSquare.x, y = currentSquare.y })
-                    return true
+                    next_turn(game, color)
+                    return
                 end
                 M.piece.move(selectedPiece, currentSquare)
                 M.square.free(square)
@@ -228,7 +212,6 @@ return {
                     M.square.occupy(square, deadPiece)
                     table.insert(game.pieces[deadPiece.color], deadPiece)
                 end
-                return
             end
         end
     end

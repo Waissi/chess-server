@@ -1,11 +1,10 @@
 ---@class PlayerModule
 ---@field init fun()
 ---@field get_player fun(color: string): Player
----@field next fun(currentPlayer: Player): Player
 ---@field set_last_piece fun(piece: Piece)
 ---@field set_en_passant fun(color: string, bool: boolean)
 ---@field get_dead_pawn_en_passant fun(piece: Piece, square: Square, board: Square[][]): Piece
----@field can_perform_en_passant fun(currentPlayer: Player): boolean
+---@field can_perform_en_passant fun(color: string): boolean
 ---@field can_promote fun(piece: Piece, square: Square): boolean
 ---@field get_king fun(color: string, pieces: Piece[]): Piece
 ---@field get_opponent_king fun(color: string, pieces: Piece[]): Piece

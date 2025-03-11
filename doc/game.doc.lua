@@ -1,14 +1,17 @@
 ---@class GameModule
----@field init fun()
+---@field init fun(id: string): Game
 ---@field release fun()
 ---@field continue_playing fun()
 ---@field on_mouse_moved fun(x: number, y: number): boolean
 ---@field on_mouse_pressed fun(x: number, y: number, button: number)
 ---@field receive_game_data fun(data: table)
----@field check_piece_movement fun(connection: Connection, data: table): boolean
+---@field check_piece_movement fun(game: Game, data: table): boolean
 ---@field draw fun()
 
 ---@class Game
 ---@field board Square[][]
 ---@field pieces table<string, Piece[]>
 ---@field positions table
+---@field id string
+---@field currentPlayer string
+---@field menu string
