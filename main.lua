@@ -13,6 +13,6 @@ function love.quit()
 end
 
 function love.load()
-    if not connection.init() then love.event.quit() end
     print "===== Starting Chess Server ====="
+    if not connection.init() then love.event.quit() end
 end

@@ -149,6 +149,7 @@ return {
         local status, address = https.request(allocatorUrl)
         if status == 200 then
             allocatorPeer = host:connect(address .. ":6790", 5)
+            print("Connecting with allocator:", allocatorPeer)
             return true
         end
     end,
@@ -185,12 +186,14 @@ return {
                     handle_client_event[event.channel](game, event.data, playerId)
                 end
             elseif event.type == "connect" then
+                print("Connecting with peer:", event.peer)
                 local id = tostring(event.data)
                 local peer = event.peer
                 peers[id] = event.peer
                 ids[peer] = id
                 allocatorPeer:send(id, allocatorChannels["new_player"])
             elseif event.type == "disconnect" then
+                print("Disconnecting with peer:", event.peer)
                 local playerId = ids[event.peer]
                 local game = games[playerId]
                 delete_player(game, playerId, event.peer)
