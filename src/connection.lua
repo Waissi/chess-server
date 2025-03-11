@@ -97,7 +97,7 @@ local handle_client_event = {
 ---channel 2 => creates new game
 ---channel 3 => send update to player
 ---@type fun(channel: number, data: string)
-local handle_dispatcher_event = {
+local handle_allocator_event = {
 
     ---init new game
     ---@param playerId string
@@ -155,7 +155,7 @@ return {
         end
         local status, address = https.request(allocatorUrl)
         if status == 200 then
-            allocatorPeer = host:connect(address .. ":6790", 5)
+            allocatorPeer = allocator:connect(address .. ":6790", 5)
             print("Connecting with remote allocator:", allocatorPeer)
             return true
         end
@@ -210,7 +210,7 @@ return {
         local allocatorEvent = allocator:service()
         while allocatorEvent do
             if allocatorEvent.type == "receive" then
-                handle_dispatcher_event[allocatorEvent.channel](allocatorEvent.data)
+                handle_allocator_event[allocatorEvent.channel](allocatorEvent.data)
             end
             allocatorEvent = allocator:service()
         end
