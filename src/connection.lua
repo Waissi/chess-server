@@ -102,6 +102,7 @@ local handle_dispatcher_event = {
     ---init new game
     ---@param playerId string
     function(playerId)
+        print "Sending game init"
         local color = playerId:sub(1, 1) == "w" and "white" or "black"
         local id = playerId:sub(2, #playerId)
         peers[id]:send(color, allocatorChannels["new_player"])
@@ -118,6 +119,7 @@ local handle_dispatcher_event = {
             print(status, error)
             return
         end
+        print "New game created"
         local registeredPlayer = peers[whitePlayerId] and whitePlayerId or blackPlayerId
         games[registeredPlayer] = newGame
         local gamePieces = json.encode(newGame.pieces)
