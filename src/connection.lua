@@ -23,7 +23,7 @@ local clientChannels = {
 local games = {}
 
 local https = require "https"
-local allocatorUrl = "https://75eezuqgqp5shmcvrj6msaqo3a0lvrhx.lambda-url.eu-central-1.on.aws/"
+local allocatorUrl = "https://nncnfzpyl5svsujp7dqgug7aru0wvlcf.lambda-url.eu-central-1.on.aws/"
 local gameDbUrl = "https://ueihnzss5q6k4j6piwwwc766eq0uarxk.lambda-url.eu-central-1.on.aws/"
 
 local ids = {}
@@ -153,7 +153,7 @@ return {
             print("Connecting with local allocator:", allocatorPeer)
             return true
         end
-        local status, address = https.request(allocatorUrl)
+        local status, address = https.request(allocatorUrl, { data = "allocator" })
         if status == 200 then
             allocatorPeer = allocator:connect(address .. ":6790", 5)
             print("Connecting with remote allocator:", allocatorPeer)
