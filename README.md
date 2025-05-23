@@ -4,6 +4,7 @@ A containerized chess server written in Lua for the [Löve](https://love2d.org/)
 
 ## Dependencies
 
+- [lua https](https://github.com/love2d/lua-https)
 - [json.lua](https://github.com/rxi/json.lua) (included)
 
 ## Running
