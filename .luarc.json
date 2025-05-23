@@ -1,0 +1,24 @@
+{
+    "workspace": {
+        "library": [
+            "${3rd}/love2d/library"
+        ]
+    },
+    "Lua": {
+        "checkThirdParty": false,
+        "diagnostics": {
+            "globals": [
+                "dbg",
+                "switch",
+                "import",
+                "static"
+            ],
+        "disable": [
+            "redundant-parameter",
+            "duplicate-set-field"
+        ]},
+        "runtime": {
+            "version": "LuaJIT"
+        }
+    }
+}
