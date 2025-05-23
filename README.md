@@ -6,9 +6,15 @@ A containerized chess server written in Lua for the [Löve](https://love2d.org/)
 
 - [json.lua](https://github.com/rxi/json.lua) (included)
 
-## Installation
+## Running
 
-You need to install Löve and have it in your path, then simply run
+### With Docker
+```
+zip server.love src/* main.lua conf.lua
+docker build -t chess-server .
+docker run --rm chess-server
+```
+### With löve
 ```
 love .
 ```
