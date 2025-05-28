@@ -159,6 +159,7 @@ return {
             print("Connecting with remote allocator:", allocatorPeer)
             return true
         end
+        print(status, address)
     end,
 
     quit = function()
