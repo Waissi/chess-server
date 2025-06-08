@@ -24,7 +24,7 @@ local games = {}
 
 local https = require "https"
 local allocatorUrl = "https://qfigqmeles6mwpsyxoi2tbq52e0xwiul.lambda-url.eu-central-1.on.aws/"
-local gameDbUrl = "https://rut5mbythrdguvssbkyt2khj3a0wjiqj.lambda-url.eu-central-1.on.aws/"
+local gameDbUrl = "https://dfzd22wmwcjqmf443cuyscroeq0xcjun.lambda-url.eu-central-1.on.aws/"
 
 local ids = {}
 local peers = {}
