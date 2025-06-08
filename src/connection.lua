@@ -23,7 +23,7 @@ local clientChannels = {
 local games = {}
 
 local https = require "https"
-local allocatorUrl = "https://bx6uvqcwjjdrkm7hgvk3643xhe0zsrkt.lambda-url.eu-central-1.on.aws/"
+local allocatorUrl = "https://qfigqmeles6mwpsyxoi2tbq52e0xwiul.lambda-url.eu-central-1.on.aws/"
 local gameDbUrl = "https://rut5mbythrdguvssbkyt2khj3a0wjiqj.lambda-url.eu-central-1.on.aws/"
 
 local ids = {}
