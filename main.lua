@@ -15,4 +15,6 @@ end
 function love.load()
     print "===== Starting Chess Server ====="
     if not connection.init() then love.event.quit() end
+    local thread = love.thread.newThread("src/healthcheck.lua")
+    thread:start()
 end
