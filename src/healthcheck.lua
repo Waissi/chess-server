@@ -1,5 +1,5 @@
 local socket = require("socket")
-local server = assert(socket.bind("*", 8080))
+local server = assert(socket.bind("*", 80))
 server:settimeout(0)
 
 while true do
