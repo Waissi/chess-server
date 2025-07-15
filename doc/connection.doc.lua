@@ -1,5 +1,5 @@
 ---@class ConnectionModule
----@field init fun(): boolean
+---@field init fun()
 ---@field quit fun()
 ---@field update fun()
 ---@field disconnect fun()

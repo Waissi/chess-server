@@ -2,7 +2,6 @@
 ---@type GameModule
 local Game = import "game"
 local enet = require "enet"
-local json = import "json"
 local host = enet.host_create("0.0.0.0:6789", 64, 5)
 local allocator = enet.host_create()
 local allocatorPeer
@@ -22,35 +21,52 @@ local clientChannels = {
 ---@type Game[]
 local games = {}
 
-local https = require "https"
-local allocatorUrl = "https://qfigqmeles6mwpsyxoi2tbq52e0xwiul.lambda-url.eu-central-1.on.aws/"
-local gameDbUrl = "https://dfzd22wmwcjqmf443cuyscroeq0xcjun.lambda-url.eu-central-1.on.aws/"
+local redis = require "src.redis"
+local params = {
+    host = "redis",
+    port = 6379
+}
+local redisClient = redis.connect(params)
 
 local ids = {}
 local peers = {}
 
----@param requestData table
-local send_request_to_game_db = function(requestData)
-    local thread = love.thread.newThread([[
-        local https = require "https"
-        local status, error = https.request(...)
-        if status ~= 200 then
-            print(status, error)
+local function serialize_table(data)
+    local parsedData = {}
+    for index, value in pairs(data) do
+        if type(value) == "table" then
+            value = serialize_table(value)
+        elseif type(value) == "string" then
+            value = table.concat({ '"', value, '"' })
         end
-    ]])
-    thread:start(gameDbUrl, requestData)
+        if type(index) == "number" then
+            parsedData[#parsedData + 1] = tostring(value)
+            parsedData[#parsedData + 1] = ','
+        else
+            parsedData[#parsedData + 1] = index
+            parsedData[#parsedData + 1] = '='
+            parsedData[#parsedData + 1] = tostring(value)
+            parsedData[#parsedData + 1] = ','
+        end
+    end
+    table.remove(parsedData, #parsedData)
+    table.insert(parsedData, 1, '{')
+    table.insert(parsedData, '}')
+    return table.concat(parsedData)
 end
 
 ---@param playerId string
 ---@return Game?
 local get_game = function(playerId)
-    local data = { method = "get", data = playerId }
-    local status, gameData = https.request(gameDbUrl, data)
-    if status == 200 then
-        local game = json.decode(gameData)
-        return game
-    end
-    print "Could not find game"
+    local pattern = '*' .. playerId .. '*'
+    local result = redisClient:scan('0', { match = pattern })
+    if not result then return end
+    local _, keys = unpack(result)
+    local key = keys and keys[1]
+    if not key then return end
+    local gameData = redisClient:get(key)
+    if not gameData then return end
+    return loadstring("return" .. gameData)()
 end
 
 ---@param game Game
@@ -58,7 +74,7 @@ end
 ---@param peer userdata
 local delete_player = function(game, playerId, peer)
     if game then
-        send_request_to_game_db({ method = "delete", data = game.id })
+        redisClient:del(game.id)
         local whitePlayerId = string.match(game.id, "w(.-)b")
         local blackPlayerId = string.match(game.id, "b(.*)")
         local remainingPlayer = playerId == whitePlayerId and blackPlayerId or whitePlayerId
@@ -79,16 +95,18 @@ local handle_client_event = {
 
     ---check input from player
     ---@param game Game
-    ---@param eventData table
+    ---@param eventData string
     function(game, eventData)
-        local data = json.decode(eventData)
+        assert(string.sub(eventData, 1, 1) == "{" and string.sub(eventData, #eventData, #eventData) == "}",
+            "corrupt data")
+        local data = loadstring("return" .. eventData)()
         Game.check_piece_movement(game, data)
     end,
 
     ---start new game
     ---@param game Game
     function(game)
-        send_request_to_game_db({ method = "delete", data = game.id })
+        redisClient:del(game.id)
         allocatorPeer:send(game.id, allocatorChannels["new_game"])
     end,
 }
@@ -114,15 +132,11 @@ local handle_allocator_event = {
         local whitePlayerId = string.match(gameId, "w(.-)b")
         local blackPlayerId = string.match(gameId, "b(.*)")
         local newGame = Game.init(gameId)
-        local status, error = https.request(gameDbUrl, { method = "post", data = json.encode(newGame) })
-        if status ~= 200 then
-            print(status, error)
-            return
-        end
+        redisClient:set(gameId, serialize_table(newGame))
         print "New game created"
         local registeredPlayer = peers[whitePlayerId] and whitePlayerId or blackPlayerId
         games[registeredPlayer] = newGame
-        local gamePieces = json.encode(newGame.pieces)
+        local gamePieces = serialize_table(newGame.pieces)
         peers[registeredPlayer]:send(gamePieces, clientChannels["start"])
         local unregisteredPlayer = registeredPlayer == whitePlayerId and blackPlayerId or whitePlayerId
         if peers[unregisteredPlayer] then
@@ -140,7 +154,7 @@ local handle_allocator_event = {
             local game = get_game(playerId)
             if not game then return end
             games[playerId] = game
-            peers[playerId]:send(json.encode({ pieces = game.pieces }), clientChannels["update"])
+            peers[playerId]:send(serialize_table({ pieces = game.pieces }), clientChannels["update"])
         end
     end
 }
@@ -148,18 +162,8 @@ local handle_allocator_event = {
 return {
 
     init = function()
-        if os.getenv("env") == "dev" then
-            allocatorPeer = allocator:connect("172.17.0.2:6790", 5)
-            print("Connecting with local allocator:", allocatorPeer)
-            return true
-        end
-        local status, address = https.request(allocatorUrl, { data = "allocator" })
-        if status == 200 then
-            allocatorPeer = allocator:connect(address .. ":6790", 5)
-            print("Connecting with remote allocator:", allocatorPeer)
-            return true
-        end
-        print(status, address)
+        allocatorPeer = allocator:connect("allocator:6790", 5)
+        print("Connecting with allocator:", allocatorPeer)
     end,
 
     quit = function()
@@ -169,8 +173,8 @@ return {
 
     ---@param game Game
     notify_players = function(game)
-        send_request_to_game_db({ method = "post", data = json.encode(game) })
-        local data = json.encode({ pieces = game.pieces, menu = game.menu })
+        redisClient:set(game.id, serialize_table(game))
+        local data = serialize_table({ pieces = game.pieces, menu = game.menu })
         local players = { string.match(game.id, "w(.-)b"), string.match(game.id, "b(.*)") }
         for _, playerId in pairs(players) do
             local peer = peers[playerId]
