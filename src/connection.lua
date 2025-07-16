@@ -23,7 +23,7 @@ local games = {}
 
 local redis = require "src.redis"
 local params = {
-    host = "redis",
+    host = "localhost",
     port = 6379
 }
 local redisClient = redis.connect(params)
@@ -162,7 +162,7 @@ local handle_allocator_event = {
 return {
 
     init = function()
-        allocatorPeer = allocator:connect("allocator:6790", 5)
+        allocatorPeer = allocator:connect("localhost:6790", 5)
         print("Connecting with allocator:", allocatorPeer)
     end,
 
