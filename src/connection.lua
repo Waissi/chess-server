@@ -1,6 +1,7 @@
 ---@diagnostic disable: undefined-field
 ---@type GameModule
 local Game = import "game"
+local env = os.getenv("ENV")
 local enet = require "enet"
 local host = enet.host_create("0.0.0.0:6789", 64, 5)
 local allocator = enet.host_create()
@@ -23,7 +24,7 @@ local games = {}
 
 local redis = require "src.redis"
 local params = {
-    host = "redis",
+    host = env == "dev" and "redis" or "localhost",
     port = 6379
 }
 local redisClient = redis.connect(params)
@@ -162,7 +163,8 @@ local handle_allocator_event = {
 return {
 
     init = function()
-        allocatorPeer = allocator:connect("allocator:6790", 5)
+        local containerHost = env == "dev" and "allocator" or "localhost"
+        allocatorPeer = allocator:connect(containerHost .. ":6790", 5)
         print("Connecting with allocator:", allocatorPeer)
     end,
 
