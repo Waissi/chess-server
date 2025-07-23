@@ -16,6 +16,3 @@ docker run -p 6789:6789/udp chess-server
 
 ## Dependencies
 - [Docker](https://www.docker.com/) - *optional*
-
-## Related projects
-- [client](https://github.com/Waissi/chess-client)
