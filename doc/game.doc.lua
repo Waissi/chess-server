@@ -1,5 +1,5 @@
 ---@class GameModule
----@field init fun(id: string): Game
+---@field init fun(): Game
 ---@field release fun()
 ---@field continue_playing fun()
 ---@field on_mouse_moved fun(x: number, y: number): boolean
@@ -12,6 +12,5 @@
 ---@field board Square[][]
 ---@field pieces table<string, Piece[]>
 ---@field positions table
----@field id string
 ---@field currentPlayer string
 ---@field menu string

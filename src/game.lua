@@ -67,8 +67,7 @@ local next_turn = function(game, playerColor)
 end
 
 return {
-    ---@param id string
-    init = function(id)
+    init = function()
         M.players.init()
         local game = {
             board = M.board.new(),
@@ -78,7 +77,6 @@ return {
             },
             currentPlayer = "white",
             positions = {},
-            id = id
         }
         local startPos = M.position.get_start_positions()
         for number, list in pairs(startPos) do

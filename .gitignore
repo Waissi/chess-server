@@ -1,7 +1,5 @@
 .luarc.json
 **/*.swp
 scripts/*
-.vscode/**
 **/*.DS_Store
 *.love
-**/*.so
